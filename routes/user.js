@@ -1,6 +1,8 @@
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
 import express from "express"
+import { Telegraf } from "telegraf"
+import url from "url"
 
 import users from "../models/users.js"
 import tasks from "../models/tasks.js"
@@ -23,6 +25,8 @@ import qubic from "../wallets/qubic.js"
 import ton from "../wallets/ton.js"
 
 const router = express.Router()
+
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN)
 
 dotenv.config()
 
@@ -450,6 +454,24 @@ router.put("/farm", userAuth, async (req, res) => {
     }
 })
 
+
+
+// Subscription checker
+const checkTelegramSubscription = async (channel, user) => {
+    try {
+        const chatMember = await bot.telegram.getChatMember(channel, user)
+        
+        if (['member', 'administrator', 'creator'].includes(chatMember.status)) {
+            return true
+        } else {
+            return false
+        }
+    } catch (error) {
+        console.error('Error checking channel membership:', error)
+        return false
+    }
+}
+
 // ADD COMPLETED TASK
 router.post("/completeds", userAuth, async (req, res) => {
     try {///////////////////////////////////////////////////////////////////////////////////
@@ -498,6 +520,16 @@ router.post("/completeds", userAuth, async (req, res) => {
             return res.status(400).json({ status: false, message: "You already completed!" })
         }
         console.log("Task passed the completed checking")
+
+        // check telegram subscriptions
+        const parsedUrl = url.parse(task.link)
+        const channelUsername = parsedUrl.pathname.split('/')[1]
+        const isSubs = await checkTelegramSubscription(`@${channelUsername}`, user.tgUserId)
+        if (!isSubs) {
+        console.log("User didn't subscribed yet")
+            return res.status(400).json({ status: false, message: "You didn't subscribed yet!" })
+        }
+        console.log("Task passed the telegram subscription checking")
 
         // define UTC time for completed task time
         const currentDate = new Date()
