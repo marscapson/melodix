@@ -8,7 +8,7 @@ import url from "url"
 // models
 import users from "../models/users.js"
 import tasks from "../models/tasks.js"
-import completeds from "../models/completeds.js"
+import records from "../models/records.js"
 import farms from "../models/farms.js"
 import wallets from "../models/wallets.js"
 
@@ -22,7 +22,7 @@ import { setFarmCache, getFarmCache } from "../middleware/farmsCache.js"
 // import { setTasksCache, getTasksCache } from "../middleware/tasksCache.js"
 import { setWalletsCache, getWalletsCache } from "../middleware/walletsCache.js"
 import { setFriendsCache, getFriendsCache } from "../middleware/friendsCache.js"
-import { setCompletedsCache, getCompletedsCache } from "../middleware/completedsCache.js"
+import { setRecordsCache, getRecordsCache } from "../middleware/recordsCache.js"
 
 import qubic from "../wallets/qubic.js"
 import ton from "../wallets/ton.js"
@@ -270,22 +270,22 @@ router.get("/wallets", userAuth, getWalletsCache, async (req, res) => {
     }
 })
 
-// GET LIST OF COMPLETED TASKS
-router.get("/completeds", userAuth, getCompletedsCache, async (req, res) => {
+// GET LIST OF RCORDED TASKS
+router.get("/records", userAuth, getRecordsCache, async (req, res) => {
     try {///////////////////////////////////////////////////////////////////////////////////
-        console.log("================== GET /user/completeds STARTED =====================")
-        // find list of completed tasks
+        console.log("================== GET /user/records STARTED =====================")
+        // find list of recorded tasks
         console.log(`User id = ${req.character.id}`)
-        const list = await completeds.find({ userId: req.character.id })
-        console.log("Completed task list found")
+        const list = await records.find({ userId: req.character.id })
+        console.log("Recorded task list found")
 
         // add to cache
-        setCompletedsCache(req.character.id, list)
-        console.log("Completed task list added into cache")
+        setRecordsCache(req.character.id, list)
+        console.log("Recorded task list added into cache")
         
         // send respond
-        res.json({ status: true, completeds: list })
-        console.log("Completed task list successfully sent")
+        res.json({ status: true, records: list })
+        console.log("Recorded task list successfully sent")
     } catch (e) {
         console.log("!!!!!!!!!!!!!!!!!!!!! Abnormal error catched !!!!!!!!!!!!!!!!!!!!!!!!")
         console.log(e)
@@ -475,10 +475,10 @@ const checkTelegramSubscription = async (channel, user) => {
     }
 }
 
-// ADD COMPLETED TASK
-router.post("/completeds", userAuth, async (req, res) => {
+// ADD RECORD
+router.post("/record", userAuth, async (req, res) => {
     try {///////////////////////////////////////////////////////////////////////////////////
-        console.log("================== POST /user/completeds STARTED ====================")
+        console.log("==================== POST /user/record STARTED ======================")
         console.log(`User id = ${req.character.id}`)
         // receive task id
         const { taskId } = req.body
@@ -513,28 +513,18 @@ router.post("/completeds", userAuth, async (req, res) => {
         }
         console.log("Task passed the status checking")
 
-        // find from completeds
-        const isExist = await completeds.findOne({ taskId: taskId, userId: req.character.id })
-        console.log("Checking if already completed")
+        // find from records
+        const isExist = await records.findOne({ taskId: taskId, userId: req.character.id })
+        console.log("Checking if already recorded")
         
-        // check if already completed
+        // check if already recorded
         if (isExist) {
-        console.log("Task already completed")
-            return res.status(400).json({ status: false, message: "You already completed!" })
+        console.log("Task already recorded")
+            return res.status(400).json({ status: false, message: "You already recorded!" })
         }
-        console.log("Task passed the completed checking")
+        console.log("Task passed the recorded checking")
 
-        // check telegram subscriptions
-        const parsedUrl = url.parse(task.link)
-        const channelUsername = parsedUrl.pathname.split('/')[1]
-        const isSubs = await checkTelegramSubscription(`@${channelUsername}`, user.tgUserId)
-        if (!isSubs) {
-        console.log("User didn't subscribed yet")
-            return res.status(400).json({ status: false, message: "You didn't subscribed yet!" })
-        }
-        console.log("Task passed the telegram subscription checking")
-
-        // define UTC time for completed task time
+        // define UTC time for record time
         const currentDate = new Date()
         const utcYear = currentDate.getUTCFullYear()
         const utcMonth = currentDate.getUTCMonth() + 1
@@ -545,18 +535,105 @@ router.post("/completeds", userAuth, async (req, res) => {
         const utcDateTime = `${utcYear}-${utcMonth.toString().padStart(2, '0')}-${utcDay.toString().padStart(2, '0')}T${utcHours.toString().padStart(2, '0')}:${utcMinutes.toString().padStart(2, '0')}:${utcSeconds.toString().padStart(2, '0')}Z`
         console.log("Create UTC time")
 
-        // create new completed task
-        const completed = new completeds({
+        // create new task record
+        const record = new records({
             taskId: taskId,
             userId: req.character.id,
-            status: "claim",
+            status: "loading",
             dateTime: utcDateTime
         })
-        console.log("Completed task created")
+        console.log("Record for task created")
         
-        // save completed task
-        await completed.save()
-        console.log("Completed task saved")
+        // save record task
+        await record.save()
+        console.log("Task record saved")
+
+        // clear record cache
+        setRecordsCache(req.character.id, undefined)
+        console.log("Records cache updated")
+
+        // send respond
+        res.json({ status: true, message: "Successfully recorded!" })
+        console.log("Response successully sent")
+    } catch (e) {
+        console.log("!!!!!!!!!!!!!!!!!!!!! Abnormal error catched !!!!!!!!!!!!!!!!!!!!!!!!")
+        console.log(e)
+        res.status(500).json({ status: false, message: "Something went wrong, please try it againg!", error: e.message })
+    }
+})
+
+// CHANGE RECORD STATUS
+router.post("/check", userAuth, async (req, res) => {
+    try {///////////////////////////////////////////////////////////////////////////////////
+        console.log("===================== POST /user/check STARTED ======================")
+        console.log(`User id = ${req.character.id}`)
+        // receive task id
+        const { recordId } = req.body
+        console.log(`Record id = ${recordId}`)
+
+        // find user
+        const user = await users.findById(req.character.id)
+        console.log("User found")
+
+        // check if user exist and not banned
+        if (!user || user.status !== 'active') {
+        console.log("User didn't pass the checking")
+            return res.status(400).json({ status: false, message: "User does not exist!" })
+        }
+        console.log("User passed the checking")
+
+        // find record
+        const record = await records.findById(recordId)
+        console.log("Record found")
+
+        // check if record exists
+        if (!record) {
+        console.log("Record didn't pass the checking")
+            return res.status(400).json({ status: false, message: "Record doesn't exist!" })
+        }
+        console.log("Record passed the checking")
+
+        // find task
+        const task = await tasks.findById(record.taskId)
+        console.log("Task found")
+
+        // check if task exists
+        if (!task) {
+        console.log("Task didn't pass the checking")
+            return res.status(400).json({ status: false, message: "Task does not exist!" })
+        }
+        console.log("Task passed the checking")
+
+        // check telegram subscriptions
+        if (task.type === "tg_subs") {
+            const parsedUrl = url.parse(task.link)
+            const channelUsername = parsedUrl.pathname.split('/')[1]
+            const isSubs = await checkTelegramSubscription(`@${channelUsername}`, user.tgUserId)
+            if (!isSubs) {
+            console.log("User didn't subscribed yet")
+                return res.status(400).json({ status: false, message: "You didn't subscribed yet!" })
+            }
+            console.log("Task passed the telegram subscription checking")
+        }
+
+        // define UTC time for record time
+        const currentDate = new Date()
+        const utcYear = currentDate.getUTCFullYear()
+        const utcMonth = currentDate.getUTCMonth() + 1
+        const utcDay = currentDate.getUTCDate()
+        const utcHours = currentDate.getUTCHours()
+        const utcMinutes = currentDate.getUTCMinutes()
+        const utcSeconds = currentDate.getUTCSeconds()
+        const utcDateTime = `${utcYear}-${utcMonth.toString().padStart(2, '0')}-${utcDay.toString().padStart(2, '0')}T${utcHours.toString().padStart(2, '0')}:${utcMinutes.toString().padStart(2, '0')}:${utcSeconds.toString().padStart(2, '0')}Z`
+        console.log("Create UTC time")
+
+        // update task records status
+        const recordFilter = { _id: record._id }
+
+        record.status = "completed"
+
+        await records.updateOne(recordFilter, record)
+        console.log("Completed task record saved")
 
         // give an award
         user.coins += task.reward
@@ -576,9 +653,9 @@ router.post("/completeds", userAuth, async (req, res) => {
         // clear user cache
         setUserCache(req.character.id, undefined)
 
-        // clear completeds cache
-        setCompletedsCache(req.character.id, undefined)
-        console.log("User and Completeds cache updated")
+        // clear record cache
+        setRecordsCache(req.character.id, undefined)
+        console.log("User and Records cache updated")
 
         // send respond
         res.json({ status: true, message: "Successfully completed!" })
@@ -726,7 +803,7 @@ router.delete("/clear-all", async (req, res) => {
         console.log("======================= DELETE ALL IN DATABASE ======================")
         
         await users.deleteMany({})
-        await completeds.deleteMany({})
+        await records.deleteMany({})
         await farms.deleteMany({})
         await wallets.deleteMany({})
     
