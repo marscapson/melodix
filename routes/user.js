@@ -1,19 +1,22 @@
+// dependencies and packages
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
 import express from "express"
 import { Telegraf } from "telegraf"
 import url from "url"
 
+// models
 import users from "../models/users.js"
 import tasks from "../models/tasks.js"
 import completeds from "../models/completeds.js"
 import farms from "../models/farms.js"
 import wallets from "../models/wallets.js"
 
+// middlewares
 import { userAuth } from "../middleware/auth.js"
 import { rateLimiter } from "../middleware/rateLimiter.js"
 
-// CACHING
+// caching
 import { setUserCache, getUserCache } from "../middleware/usersCache.js"
 import { setFarmCache, getFarmCache } from "../middleware/farmsCache.js"
 // import { setTasksCache, getTasksCache } from "../middleware/tasksCache.js"
@@ -546,6 +549,7 @@ router.post("/completeds", userAuth, async (req, res) => {
         const completed = new completeds({
             taskId: taskId,
             userId: req.character.id,
+            status: "claim",
             dateTime: utcDateTime
         })
         console.log("Completed task created")

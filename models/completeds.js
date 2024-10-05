@@ -3,6 +3,7 @@ import mongoose from "mongoose"
 const completedsSchema = mongoose.Schema({
     taskId: { type: mongoose.Types.ObjectId, ref: "tasks", required: true },
     userId: { type: mongoose.Types.ObjectId, ref: "users", required: true },
+    status: { type: String, required: true },
     dateTime: { type: String, required: true }
 })
 
