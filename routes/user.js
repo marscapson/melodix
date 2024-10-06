@@ -611,9 +611,13 @@ router.post("/check", userAuth, async (req, res) => {
             const isSubs = await checkTelegramSubscription(`@${channelUsername}`, user.tgUserId)
             if (!isSubs) {
         console.log("User didn't subscribed yet")
-            await records.deleteOne(record)
-            
+        
+                await records.deleteOne(record)
         console.log("Record deleted")
+
+                setRecordsCache(req.character.id, undefined)
+        console.log("Records cache updated")
+
                 return res.status(400).json({ status: false, message: "You didn't subscribed yet!" })
             }
         console.log("Task passed the telegram subscription checking")
