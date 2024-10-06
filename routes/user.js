@@ -610,10 +610,13 @@ router.post("/check", userAuth, async (req, res) => {
             const channelUsername = parsedUrl.pathname.split('/')[1]
             const isSubs = await checkTelegramSubscription(`@${channelUsername}`, user.tgUserId)
             if (!isSubs) {
-            console.log("User didn't subscribed yet")
+        console.log("User didn't subscribed yet")
+            await records.deleteOne(record)
+            
+        console.log("Record deleted")
                 return res.status(400).json({ status: false, message: "You didn't subscribed yet!" })
             }
-            console.log("Task passed the telegram subscription checking")
+        console.log("Task passed the telegram subscription checking")
         }
 
         // define UTC time for record time
