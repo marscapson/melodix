@@ -833,9 +833,9 @@ router.put("/points", userAuth, rateLimiter, async (req, res) => {
 //     }
 // })
 
-router.delete("/clear-my-record", userAuth, async (req, res) => {
+router.delete("/clear-my-records", userAuth, async (req, res) => {
     try {///////////////////////////////////////////////////////////////////////////////////
-        console.log("======================= DELETE ALL IN DATABASE ======================")
+        console.log("======================= DELETE USER RECORDS ========================")
         console.log(`User id = ${req.character.id}`)
         await records.deleteMany({ userId: req.character.id })
     
