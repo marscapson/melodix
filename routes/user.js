@@ -73,7 +73,6 @@ const rewardFriends = async (friendId, coins, isReferal) => {
     }
 }
 
-
 // GET MELODIX TOKEN
 router.get('/token/:initData', async (req, res) => {
     try {///////////////////////////////////////////////////////////////////////////////////
@@ -231,11 +230,15 @@ router.get("/tasks", /* getTasksCache, */ async (req, res) => {
         console.log("===================== GET /user/tasks STARTED =======================")
         // find tasks
         const list = await tasks.find({ status: "active" })
-        console.log("Active task list found")
+        console.log("Task list found")
 
         // add to cache
         // setTasksCache(list)
         // console.log("Task list added into cache")
+
+        // remove keywords
+        for (let i=0; i<list.length; i++) list[i].keyword = undefined
+        console.log("Keywords removed")
 
         // send respond
         res.json({ status: true, tasks: list })
@@ -568,8 +571,9 @@ router.post("/check", userAuth, async (req, res) => {
         console.log("===================== POST /user/check STARTED ======================")
         console.log(`User id = ${req.character.id}`)
         // receive task id
-        const { recordId } = req.body
+        const { recordId, keyword } = req.body
         console.log(`Record id = ${recordId}`)
+        console.log(`Keyword = ${keyword}`)
 
         // find user
         const user = await users.findById(req.character.id)
@@ -621,6 +625,12 @@ router.post("/check", userAuth, async (req, res) => {
                 return res.status(400).json({ status: false, message: "You didn't subscribed yet!" })
             }
         console.log("Task passed the telegram subscription checking")
+        } else if (keyword && keyword === task.keyword) {
+        console.log("Keyword didn't match!")
+            return res.status(400).json({ status: false, message: "Keyword didn't match!" })
+        } else {
+        console.log("No keyword!")
+            return res.status(400).json({ status: false, message: "No keyword!" })
         }
 
         // define UTC time for record time

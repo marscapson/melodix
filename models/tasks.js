@@ -6,7 +6,8 @@ const taskSchema = mongoose.Schema({
     reward: { type: Number, required: true },
     link: { type: String, required: true },
     status: { type: String, required: true }, // active or expired
-    dateTime: { type: String, required: true }
+    dateTime: { type: String, required: true },
+    keyword: { type: String, required: true }
 })
 
 const tasks = mongoose.model("tasks", taskSchema)
