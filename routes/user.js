@@ -815,17 +815,31 @@ router.put("/points", userAuth, rateLimiter, async (req, res) => {
     }
 })
 
-router.delete("/clear-all", async (req, res) => {
+// router.delete("/clear-all", async (req, res) => {
+//     try {///////////////////////////////////////////////////////////////////////////////////
+//         console.log("======================= DELETE ALL IN DATABASE ======================")
+        
+//         await users.deleteMany({})
+//         await records.deleteMany({})
+//         await farms.deleteMany({})
+//         await wallets.deleteMany({})
+    
+//         res.json({ status: true, message: "Successfully deleted!" })
+
+//     } catch (e) {
+//         console.log("!!!!!!!!!!!!!!!!!!!!! Abnormal error catched !!!!!!!!!!!!!!!!!!!!!!!!")
+//         console.log(e)
+//         res.status(500).json({ status: false, message: "Something went wrong, please try it againg!", error: e.message })
+//     }
+// })
+
+router.delete("/clear-my-record", userAuth, async (req, res) => {
     try {///////////////////////////////////////////////////////////////////////////////////
         console.log("======================= DELETE ALL IN DATABASE ======================")
-        
-        await users.deleteMany({})
-        await records.deleteMany({})
-        await farms.deleteMany({})
-        await wallets.deleteMany({})
+        console.log(`User id = ${req.character.id}`)
+        await records.deleteMany({ userId: req.character.id })
     
         res.json({ status: true, message: "Successfully deleted!" })
-
     } catch (e) {
         console.log("!!!!!!!!!!!!!!!!!!!!! Abnormal error catched !!!!!!!!!!!!!!!!!!!!!!!!")
         console.log(e)
