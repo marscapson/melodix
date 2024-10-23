@@ -237,7 +237,10 @@ router.get("/tasks", /* getTasksCache, */ async (req, res) => {
         // console.log("Task list added into cache")
 
         // remove keywords
-        for (let i=0; i<list.length; i++) list[i].keyword = undefined
+        for (let i=0; i<list.length; i++) {
+            if (list[i].keyword === "none") list[i].keyword = false
+            else list[i].keyword = true
+        }
         console.log("Keywords removed")
 
         // send respond
@@ -625,12 +628,10 @@ router.post("/check", userAuth, async (req, res) => {
                 return res.status(400).json({ status: false, message: "You didn't subscribed yet!" })
             }
         console.log("Task passed the telegram subscription checking")
-        } else if (keyword && keyword === task.keyword) {
+        } else if (keyword && keyword !== task.keyword) {
         console.log("Keyword didn't match!")
+            await records.deleteOne(record)
             return res.status(400).json({ status: false, message: "Keyword didn't match!" })
-        } else {
-        console.log("No keyword!")
-            return res.status(400).json({ status: false, message: "No keyword!" })
         }
 
         // define UTC time for record time
