@@ -237,14 +237,25 @@ router.get("/tasks", /* getTasksCache, */ async (req, res) => {
         // console.log("Task list added into cache")
 
         // remove keywords
+        const result = []
         for (let i=0; i<list.length; i++) {
-            if (list[i].keyword === "none") list[i].keyword = false
-            else list[i].keyword = true
+            const element = {
+                _id: list[i]._id,
+                description: list[i].description,
+                type: list[i].type,
+                reward: list[i].reward,
+                link: list[i].link,
+                status: list[i].status,
+                dateTime: list[i].dateTime
+            }
+            if (list[i].keyword === "none") element.keyword = false
+            else element.keyword = true
+            result.push(element)
         }
         console.log("Keywords removed")
 
         // send respond
-        res.json({ status: true, tasks: list })
+        res.json({ status: true, tasks: result })
         console.log("Task list successfully sent")
     } catch (e) {
         console.log("!!!!!!!!!!!!!!!!!!!!! Abnormal error catched !!!!!!!!!!!!!!!!!!!!!!!!")
