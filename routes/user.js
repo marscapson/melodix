@@ -628,10 +628,19 @@ router.post("/check", userAuth, async (req, res) => {
                 return res.status(400).json({ status: false, message: "You didn't subscribed yet!" })
             }
         console.log("Task passed the telegram subscription checking")
-        } else if (keyword && keyword !== task.keyword) {
-        console.log("Keyword didn't match!")
-            await records.deleteOne(record)
-            return res.status(400).json({ status: false, message: "Keyword didn't match!" })
+        } else if (keyword) {
+            if (keyword !== task.keyword) {
+            console.log("Keyword didn't match!")
+                await records.deleteOne(record)
+            console.log("Record deleted")
+    
+                setRecordsCache(req.character.id, undefined)
+            console.log("Records cache updated")
+                return res.status(400).json({ status: false, message: "Keyword didn't match!" })
+            }
+        } else {
+        console.log("No keyword entered!")
+            return res.status(400).json({ status: false, message: "No keyword entered!" })
         }
 
         // define UTC time for record time
