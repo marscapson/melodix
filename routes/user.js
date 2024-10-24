@@ -629,7 +629,7 @@ router.post("/check", userAuth, async (req, res) => {
             }
         console.log("Task passed the telegram subscription checking")
         } else if (keyword) {
-            if (keyword !== task.keyword) {
+            if (keyword.toLowerCase() !== task.keyword.toLowerCase()) {
             console.log("Keyword didn't match!")
                 await records.deleteOne(record)
             console.log("Record deleted")
